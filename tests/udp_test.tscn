@@ -1,0 +1,82 @@
+[gd_scene load_steps=2 format=2]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Node
+
+enum Mode {
+	SERVER = 0,
+	CLIENT = 1
+}
+
+var mode = -1
+
+var packet_peer : PacketPeerUDP = null
+
+const data_to_send = [\"OK\", \"Network Test\", \"Finished\"]
+var data_recieved = []
+
+var ip = \"127.0.0.1\"
+var port = 80304
+
+const test_description = \"UDP Networking Test\"
+
+signal completed()
+signal output(string)
+
+# Called when the node enters the scene tree for the first time.
+func _enter_tree():
+	
+	assert(mode >= 0)
+	
+	var peer = PacketPeerUDP.new()
+	
+	if mode == Mode.SERVER:
+		emit_signal(\"output\", test_description + \" mode: Server\")
+		assert(peer.listen(port) == OK)
+	else:
+		emit_signal(\"output\", test_description + \" mode: Client\")
+		assert(peer.connect_to_host(ip, port) == OK)
+		emit_signal(\"output\", test_description + \":: connecting to Server (\" + ip + \") via port \" + str(port))
+	
+	packet_peer = peer
+
+func _process(delta):
+	assert(packet_peer)
+	
+	if mode == Mode.SERVER:
+		if packet_peer.is_listening() and packet_peer.get_available_packet_count() > 0:
+			var a = packet_peer.get_var()
+			data_recieved.push_back(a)
+			
+			emit_signal(\"output\", test_description + \":: Server got var: \" + str(a))
+			
+			if len(data_recieved) >= len(data_to_send):
+				assert(_verify_contents_recieved() == OK)
+				
+				emit_signal(\"output\", test_description + \":: Server successfully got all data... \" + str(data_recieved))
+				
+				set_process(false)
+				packet_peer.close()
+				emit_signal(\"completed\")
+	elif mode == Mode.CLIENT:
+		for data in data_to_send:
+			assert(packet_peer.put_var(data) == OK)
+			emit_signal(\"output\", test_description + \":: Client put var: \" + str(data))
+			emit_signal(\"completed\")
+		
+		set_process(false)
+		packet_peer.close()
+
+
+func _verify_contents_recieved():
+	# We must always have the same number of entries here...
+	var all_data_recieved = len(data_recieved) == len(data_to_send)
+	
+	for data in data_recieved:
+		all_data_recieved = all_data_recieved and data in data_to_send
+	
+	return OK if all_data_recieved else ERR_FILE_UNRECOGNIZED
+"
+
+[node name="NetworkingUDPTest" type="Node"]
+script = SubResource( 1 )

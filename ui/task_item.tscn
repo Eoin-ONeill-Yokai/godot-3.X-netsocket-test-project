@@ -1,0 +1,54 @@
+[gd_scene load_steps=2 format=2]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends HBoxContainer
+
+export var completed := false setget _set_task_completed, _is_task_completed
+export var label := \"Task\" setget _set_task_label, _get_task_label
+
+func _enter_tree():
+	_set_task_completed(completed)
+	_set_task_label(label)
+
+func _set_task_completed(value):
+	completed = value
+	
+	if is_inside_tree():
+		$CheckBox.pressed = value
+
+func _is_task_completed():
+	return completed
+	
+	
+func _set_task_label(string):
+	label = string
+	
+	if is_inside_tree():
+		$Label.text = string
+
+func _get_task_label():
+	return label
+
+func toggle():
+	$CheckBox.pressed = not $CheckBox.pressed
+"
+
+[node name="TaskItem" type="HBoxContainer"]
+margin_right = 218.0
+margin_bottom = 24.0
+script = SubResource( 1 )
+
+[node name="CheckBox" type="CheckBox" parent="."]
+margin_right = 24.0
+margin_bottom = 24.0
+focus_mode = 0
+mouse_filter = 2
+mouse_default_cursor_shape = 4
+input_pass_on_modal_close_click = false
+
+[node name="Label" type="Label" parent="."]
+margin_left = 28.0
+margin_top = 5.0
+margin_right = 218.0
+margin_bottom = 19.0
+text = "Network UDP Test Completed"

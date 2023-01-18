@@ -1,0 +1,115 @@
+[gd_scene load_steps=2 format=2]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Node
+
+enum Mode {
+	SERVER = 0,
+	CLIENT = 1
+}
+
+
+# Declare member variables here. Examples:
+# var a = 2
+# var b = \"text\"
+
+var mode = -1
+
+const data_to_send = [\"OK\", \"Network Test\", \"Finished\"]
+var data_recieved = []
+
+const test_description = \"TCP Networking Test\"
+
+var ip = \"127.0.0.1\"
+var port = 80305
+var role_object = null
+
+var clients = []
+var client_streams = []
+var host_stream = null
+
+signal completed()
+signal output(string)
+
+func _enter_tree():
+	assert(mode >= Mode.SERVER)
+	
+	if mode == Mode.SERVER:
+		emit_signal(\"output\", test_description + \" mode: Server\")
+		role_object = TCP_Server.new()
+		assert(role_object.listen(port) == OK)
+		emit_signal(\"output\", test_description + \":: now listening to port \" + str(port) + \".\")
+	else:
+		emit_signal(\"output\", test_description + \":: Client\")
+		role_object = StreamPeerTCP.new()
+		assert(role_object.connect_to_host(ip, port) == OK)
+		assert(role_object.get_status() != role_object.STATUS_NONE and role_object.get_status() != StreamPeerTCP.STATUS_ERROR)
+		
+		emit_signal(\"output\", test_description + \":: Connecting to server (\" + ip + \") via port: \" + str(port)) 
+		
+
+
+func _process(delta):
+	
+	if mode == Mode.SERVER:
+		var server : TCP_Server = (role_object as TCP_Server)
+		assert(server)
+		if server.is_connection_available():
+			var client = server.take_connection()
+			clients.push_back(client)
+			var peer_stream = PacketPeerStream.new()
+			peer_stream.set_stream_peer(client)
+			client_streams.push_back(peer_stream)
+			emit_signal(\"output\", test_description + \":: Client connected...\")
+		
+		for client in clients:
+			client = client as StreamPeerTCP
+			if !client.is_connected_to_host():
+				var index = clients.find(client)
+				clients.remove(index)
+				client_streams.remove(index)
+		
+		for client in client_streams:
+			client = client as PacketPeerStream
+			if (client.get_available_packet_count() > 0):
+				data_recieved = client.get_var()
+				
+				emit_signal(\"output\", test_description + \":: Data fetched from client: \" + str(data_recieved))
+				assert(_verify_contents_recieved() == OK)
+				emit_signal(\"completed\")
+				emit_signal(\"output\", test_description + \":: Server now stopping...\")
+				server.stop()
+			
+	elif mode == Mode.CLIENT:
+		var client : StreamPeerTCP = (role_object as StreamPeerTCP)
+		assert(client)
+		
+		if client.get_status() != client.STATUS_CONNECTED:
+			emit_signal( \"output\", test_description + \":: Awaiting Connection...\" )
+			return
+		
+		emit_signal(\"output\", test_description + \" Client:: Connected to server... Sending data!\")
+		if not host_stream:
+			host_stream = PacketPeerStream.new()
+			host_stream.set_stream_peer(client)
+			host_stream.put_var(data_to_send)
+			
+		if host_stream and host_stream.get_available_packet_count() == 0:
+			client.disconnect_from_host()
+			emit_signal(\"completed\")
+			set_process(false)
+		
+
+
+func _verify_contents_recieved():
+	# We must always have the same number of entries here...
+	var all_data_recieved = len(data_recieved) == len(data_to_send)
+	
+	for data in data_recieved:
+		all_data_recieved = all_data_recieved and (data in data_to_send)
+	
+	return OK if all_data_recieved else ERR_FILE_UNRECOGNIZED
+"
+
+[node name="NetworkingTCPTest" type="Node"]
+script = SubResource( 1 )

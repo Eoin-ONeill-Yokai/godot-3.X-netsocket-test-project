@@ -1,0 +1,83 @@
+[gd_scene load_steps=5 format=2]
+
+[ext_resource path="res://tests/udp_test.tscn" type="PackedScene" id=1]
+[ext_resource path="res://tests/tcp_test.tscn" type="PackedScene" id=2]
+
+[sub_resource type="GDScript" id=2]
+script/source = "extends Node
+
+export(Array, PackedScene) var Tests = []
+
+enum Mode {
+	SERVER = 0,
+	CLIENT = 1
+}
+
+var mode = Mode.SERVER
+
+var ip = \"127.0.0.1\"
+
+
+func _ready():
+	for arg in OS.get_cmdline_args():
+		if arg.begins_with(\"--mode\") and arg.find(\"=\"):
+			var pair = arg.split(\"=\")
+			if pair[1] == \"server\":
+				mode = Mode.SERVER
+			else:
+				mode = Mode.CLIENT
+	
+	for Test in Tests:
+		var test = Test.instance()
+		var label = test.test_description
+		var task = get_node(\"%TaskList\").add_task(label)
+		test.connect(\"completed\", task, \"toggle\")
+		test.connect(\"output\", self, \"_log_out\")
+		test.mode = mode
+		test.ip = ip
+		add_child(test)
+
+func _log_out(string):
+	print(string)
+	var console : TextEdit = get_node(\"%Console\")
+	console.text += \"\\n\" + string
+	console.scroll_vertical = console.get_line_count()
+"
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends VBoxContainer
+
+const TaskItem = preload(\"res://ui/task_item.tscn\")
+
+func add_task(name) -> Control:
+	var task = TaskItem.instance()
+	task.label = name
+	add_child(task)
+	return task
+"
+
+[node name="Node2D" type="Node"]
+script = SubResource( 2 )
+Tests = [ ExtResource( 1 ), ExtResource( 2 ) ]
+
+[node name="Control" type="HBoxContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="TaskList" type="VBoxContainer" parent="Control"]
+unique_name_in_owner = true
+margin_right = 510.0
+margin_bottom = 600.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = SubResource( 1 )
+
+[node name="Console" type="TextEdit" parent="Control"]
+unique_name_in_owner = true
+margin_left = 514.0
+margin_right = 1024.0
+margin_bottom = 600.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "Output Log:"
+readonly = true
