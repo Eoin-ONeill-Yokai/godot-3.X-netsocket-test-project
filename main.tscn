@@ -1,7 +1,8 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=6 format=2]
 
 [ext_resource path="res://tests/udp_test.tscn" type="PackedScene" id=1]
 [ext_resource path="res://tests/tcp_test.tscn" type="PackedScene" id=2]
+[ext_resource path="res://ui/run_mode_popup.tscn" type="PackedScene" id=3]
 
 [sub_resource type="GDScript" id=2]
 script/source = "extends Node
@@ -9,11 +10,12 @@ script/source = "extends Node
 export(Array, PackedScene) var Tests = []
 
 enum Mode {
+	UNDEFINED = -1,
 	SERVER = 0,
 	CLIENT = 1
 }
 
-var mode = Mode.SERVER
+var mode = Mode.UNDEFINED
 
 var ip = \"127.0.0.1\"
 
@@ -26,6 +28,22 @@ func _ready():
 				mode = Mode.SERVER
 			else:
 				mode = Mode.CLIENT
+	
+	if mode == Mode.UNDEFINED:
+		var popup = get_node(\"%RunModePopup\")
+		popup.popup()
+		popup.connect(\"popup_hide\", self, \"_begin\")
+	else:
+		_begin()
+		
+
+
+func _begin():
+	var popup = get_node(\"%RunModePopup\")
+	ip = popup.host_ip
+	mode = popup.mode
+	
+	assert(mode != Mode.UNDEFINED)
 	
 	for Test in Tests:
 		var test = Test.instance()
@@ -81,3 +99,6 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 text = "Output Log:"
 readonly = true
+
+[node name="RunModePopup" parent="." instance=ExtResource( 3 )]
+unique_name_in_owner = true

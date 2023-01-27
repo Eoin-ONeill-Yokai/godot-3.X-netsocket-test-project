@@ -43,10 +43,11 @@ func _enter_tree():
 		emit_signal(\"output\", test_description + \":: Client\")
 		role_object = StreamPeerTCP.new()
 		assert(role_object.connect_to_host(ip, port) == OK)
-		assert(role_object.get_status() != role_object.STATUS_NONE and role_object.get_status() != StreamPeerTCP.STATUS_ERROR)
+		assert(role_object.get_status() != StreamPeerTCP.STATUS_NONE)
+		assert(role_object.get_status() != StreamPeerTCP.STATUS_ERROR)
 		
 		emit_signal(\"output\", test_description + \":: Connecting to server (\" + ip + \") via port: \" + str(port)) 
-		
+
 
 
 func _process(delta):
@@ -93,7 +94,7 @@ func _process(delta):
 			host_stream = PacketPeerStream.new()
 			host_stream.set_stream_peer(client)
 			host_stream.put_var(data_to_send)
-			
+		
 		if host_stream and host_stream.get_available_packet_count() == 0:
 			client.disconnect_from_host()
 			emit_signal(\"completed\")

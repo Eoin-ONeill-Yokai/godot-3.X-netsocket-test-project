@@ -1,0 +1,112 @@
+[gd_scene load_steps=2 format=2]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Popup
+
+enum Mode {
+	SERVER = 0,
+	CLIENT
+}
+
+var host_ip = \"127.0.0.1\"
+var mode : int = Mode.SERVER
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	get_node(\"%ContinueButton\").connect(\"button_down\", self, \"hide\")
+	get_node(\"%ServerClientModal\").connect(\"item_selected\", self, \"_select_mode\")
+	get_node(\"%IpLineEdit\").connect(\"text_changed\", self, \"_ip_changed\")
+	get_node(\"%IpLineEdit\").text = host_ip
+	_update_ip_panel()
+
+func _update_ip_panel():
+	var enable_ip_panel = mode == Mode.CLIENT
+	var ip_line_edit = get_node(\"%IpLineEdit\")
+	ip_line_edit.editable = enable_ip_panel
+
+func _select_mode(p_index: int):
+	mode = p_index
+	_update_ip_panel()
+	
+
+func _ip_changed(p_ip):
+	host_ip = p_ip
+"
+
+[node name="RunModePopup" type="Popup"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = SubResource( 1 )
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Panel" type="PanelContainer" parent="CenterContainer"]
+margin_left = 362.0
+margin_top = 293.0
+margin_right = 662.0
+margin_bottom = 307.0
+rect_min_size = Vector2( 300, 0 )
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/Panel"]
+margin_left = 7.0
+margin_top = 7.0
+margin_right = 293.0
+margin_bottom = 79.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="CenterContainer/Panel/VBoxContainer"]
+margin_right = 286.0
+margin_bottom = 20.0
+
+[node name="Label" type="Label" parent="CenterContainer/Panel/VBoxContainer/HBoxContainer"]
+margin_top = 3.0
+margin_right = 213.0
+margin_bottom = 17.0
+size_flags_horizontal = 3
+text = "Run As..."
+
+[node name="ServerClientModal" type="OptionButton" parent="CenterContainer/Panel/VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+margin_left = 217.0
+margin_right = 286.0
+margin_bottom = 20.0
+text = "Server"
+items = [ "Server", null, false, 0, null, "Client", null, false, 1, null ]
+selected = 0
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="CenterContainer/Panel/VBoxContainer"]
+margin_top = 24.0
+margin_right = 286.0
+margin_bottom = 48.0
+
+[node name="Label" type="Label" parent="CenterContainer/Panel/VBoxContainer/HBoxContainer2"]
+margin_top = 5.0
+margin_right = 141.0
+margin_bottom = 19.0
+size_flags_horizontal = 3
+text = "Host IP Address..."
+
+[node name="IpLineEdit" type="LineEdit" parent="CenterContainer/Panel/VBoxContainer/HBoxContainer2"]
+unique_name_in_owner = true
+margin_left = 145.0
+margin_right = 286.0
+margin_bottom = 24.0
+size_flags_horizontal = 3
+
+[node name="HBoxContainer3" type="HBoxContainer" parent="CenterContainer/Panel/VBoxContainer"]
+margin_top = 52.0
+margin_right = 286.0
+margin_bottom = 72.0
+
+[node name="Control" type="Control" parent="CenterContainer/Panel/VBoxContainer/HBoxContainer3"]
+margin_right = 213.0
+margin_bottom = 20.0
+size_flags_horizontal = 3
+
+[node name="ContinueButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/HBoxContainer3"]
+unique_name_in_owner = true
+margin_left = 217.0
+margin_right = 286.0
+margin_bottom = 20.0
+text = "Continue"
