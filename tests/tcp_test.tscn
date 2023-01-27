@@ -86,10 +86,14 @@ func _process(delta):
 		assert(client)
 		
 		if client.get_status() != client.STATUS_CONNECTED:
+			if client.get_status() == client.STATUS_ERROR:
+				print(\"ERROR!\")
+				set_process(false)
+			
 			emit_signal( \"output\", test_description + \":: Awaiting Connection...\" )
 			return
 		
-		emit_signal(\"output\", test_description + \" Client:: Connected to server... Sending data!\")
+		emit_signal(\"output\", test_description + \" Client:: Connected to server (\" + client.get_connected_host() + \":\" + str(client.get_connected_port()) + \")... Sending data!\")
 		if not host_stream:
 			host_stream = PacketPeerStream.new()
 			host_stream.set_stream_peer(client)
