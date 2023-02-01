@@ -18,7 +18,7 @@ var data_recieved = []
 var ip = \"127.0.0.1\"
 var port = 80304
 
-const test_description = \"UDP Networking Test\"
+const test_description = \"UDP Basic Send/Recieve Networking Test\"
 
 signal completed()
 signal output(string)

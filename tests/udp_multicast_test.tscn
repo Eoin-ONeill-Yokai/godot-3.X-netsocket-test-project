@@ -1,0 +1,56 @@
+[gd_scene load_steps=2 format=2]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Node
+
+var packet_peer : PacketPeerUDP
+
+var to_send = []
+var recieved_data = []
+
+const PACKETS_TO_SEND = 4
+
+var test_description = \"Multicast UDP Test\"
+var port = 80307
+
+signal output(string)
+signal completed()
+
+func _enter_tree():
+	packet_peer = PacketPeerUDP.new()
+	var interface = IP.get_local_interfaces()[0]
+	packet_peer.listen(port)
+	packet_peer.join_multicast_group(\"225.0.0.0\", interface.friendly)
+	packet_peer.set_dest_address(\"255.255.255.255\", port)
+	
+	emit_signal(\"output\", \"Joined multicast group: 225.0.0.0 on local interface \" + interface.friendly)
+	
+	for packet in range(0, PACKETS_TO_SEND):
+		to_send.push_back(int(rand_range(0, 256)))
+
+func _process(delta):
+	if len(to_send) > 0:
+		var err = packet_peer.put_var(to_send[0])
+		if err == OK:
+			emit_signal(\"output\", \"UDP Multicast Test:: Sent packet: \" + str(to_send[0]))
+			to_send.pop_front()
+	
+	if packet_peer.get_available_packet_count():
+		recieved_data.push_back(packet_peer.get_var())
+		emit_signal(\"output\", \"UDP Multicast Test:: Recieved packet: \" + str(recieved_data[len(recieved_data) - 1]))
+	
+	if len(recieved_data) == PACKETS_TO_SEND:
+		emit_signal(\"completed\")
+		
+
+func _exit_tree():
+	var interface = IP.get_local_interfaces()[0]
+	packet_peer.leave_multicast_group(\"225.0.0.0\", interface.friendly)
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+#func _process(delta):
+#	pass
+"
+
+[node name="UDPMulticastTest" type="Node"]
+script = SubResource( 1 )
