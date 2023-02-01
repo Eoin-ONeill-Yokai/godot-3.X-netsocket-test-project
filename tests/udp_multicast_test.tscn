@@ -3,6 +3,12 @@
 [sub_resource type="GDScript" id=1]
 script/source = "extends Node
 
+enum Mode {
+	SERVER = 0,
+	CLIENT = 1
+}
+
+
 var packet_peer : PacketPeerUDP
 
 var to_send = []
@@ -12,6 +18,8 @@ const PACKETS_TO_SEND = 4
 
 var test_description = \"Multicast UDP Test\"
 var port = 80307
+var ip = \"127.0.0.1\"
+var mode = -1
 
 signal output(string)
 signal completed()
@@ -20,20 +28,22 @@ func _enter_tree():
 	packet_peer = PacketPeerUDP.new()
 	var interface = IP.get_local_interfaces()[0]
 	packet_peer.listen(port)
-	packet_peer.join_multicast_group(\"225.0.0.0\", interface.friendly)
+	packet_peer.join_multicast_group(\"225.0.0.0\", interface.name)
 	packet_peer.set_dest_address(\"255.255.255.255\", port)
 	
-	emit_signal(\"output\", \"Joined multicast group: 225.0.0.0 on local interface \" + interface.friendly)
+	emit_signal(\"output\", \"Joined multicast group: 225.0.0.0 on local interface \" + interface.name)
 	
 	for packet in range(0, PACKETS_TO_SEND):
 		to_send.push_back(int(rand_range(0, 256)))
 
 func _process(delta):
-	if len(to_send) > 0:
+	if len(to_send) > 0 and mode == Mode.CLIENT:
 		var err = packet_peer.put_var(to_send[0])
 		if err == OK:
 			emit_signal(\"output\", \"UDP Multicast Test:: Sent packet: \" + str(to_send[0]))
 			to_send.pop_front()
+	elif len(to_send) == 0 and mode == Mode.CLIENT:
+		emit_signal(\"completed\")
 	
 	if packet_peer.get_available_packet_count():
 		recieved_data.push_back(packet_peer.get_var())

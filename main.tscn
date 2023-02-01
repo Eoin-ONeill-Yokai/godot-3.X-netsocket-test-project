@@ -80,7 +80,7 @@ func add_task(name) -> Control:
 
 [node name="Node2D" type="Node"]
 script = SubResource( 2 )
-Tests = [ ExtResource( 4 ), ExtResource( 1 ), ExtResource( 5 ), ExtResource( 2 ) ]
+Tests = [ ExtResource( 4 ), ExtResource( 1 ), ExtResource( 2 ), ExtResource( 5 ) ]
 
 [node name="Control" type="HBoxContainer" parent="."]
 anchor_right = 1.0

@@ -25,7 +25,6 @@ signal output(string)
 
 # Called when the node enters the scene tree for the first time.
 func _enter_tree():
-	
 	assert(mode >= 0)
 	
 	var peer = PacketPeerUDP.new()
